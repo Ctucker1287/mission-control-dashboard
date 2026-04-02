@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission Control</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #060b12;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    .bg-float {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-float span {
+      position: absolute;
+      font-size: 28px;
+      font-weight: 700;
+      text-transform: lowercase;
+      opacity: 0.08;
+      filter: blur(0.2px) drop-shadow(0 0 10px rgba(0,255,255,0.35));
+      animation: drift linear infinite;
+      user-select: none;
+    }
+
+    .bg1 { left: 8%; top: 12%; color: #39ffea; animation-duration: 32s; }
+    .bg2 { left: 72%; top: 18%; color: #ff4df0; animation-duration: 40s; font-size: 22px; }
+    .bg3 { left: 20%; top: 58%; color: #7df9ff; animation-duration: 36s; font-size: 34px; }
+    .bg4 { left: 82%; top: 68%; color: #b76cff; animation-duration: 44s; font-size: 26px; }
+    .bg5 { left: 44%; top: 30%; color: #4dff91; animation-duration: 38s; font-size: 20px; }
+    .bg6 { left: 58%; top: 78%; color: #39ffea; animation-duration: 48s; font-size: 30px; }
+
+    @keyframes drift {
+      0%   { transform: translate(0, 0) rotate(0deg); }
+      25%  { transform: translate(20px, -25px) rotate(4deg); }
+      50%  { transform: translate(-15px, 18px) rotate(-3deg); }
+      75%  { transform: translate(24px, 10px) rotate(2deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: rgba(12, 18, 27, 0.92);
+      backdrop-filter: blur(6px);
+      border-right: 1px solid #1d2a3a;
+      padding: 24px 18px;
+    }
+
+    .brand {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 28px;
+      line-height: 1.1;
+    }
+
+    .nav-section-title {
+      color: #7f90a8;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 22px 0 10px;
+    }
+
+    .nav-item {
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: #d7e1ec;
+      margin-bottom: 8px;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .nav-item:hover {
+      background: #111925;
+      border-color: #1b2a3d;
+    }
+
+    .nav-item.active {
+      background: #131c28;
+      border-color: #223247;
+    }
+
+    .main {
+      padding: 26px;
+      overflow-x: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .headline h1 {
+      margin: 0;
+      font-size: 38px;
+    }
+
+    .headline p {
+      margin: 8px 0 0;
+      color: #93a4ba;
+      font-size: 15px;
+    }
+
+    .status-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .status-pill {
+      background: rgba(16, 25, 38, 0.92);
+      border: 1px solid #23344a;
+      color: #cfe0f2;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .ticker-wrap {
+      width: 100%;
+      overflow: hidden;
+      background: rgba(16, 25, 36, 0.92);
+      border: 1px solid #1e2e44;
+      border-radius: 16px;
+      margin-bottom: 22px;
+      padding: 12px 0;
+      position: relative;
+      backdrop-filter: blur(4px);
+    }
+
+    .ticker-track {
+      display: inline-flex;
+      gap: 28px;
+      white-space: nowrap;
+      min-width: max-content;
+      animation: tickerScroll 38s linear infinite;
+      padding-left: 100%;
+      will-change: transform;
+    }
+
+    .ticker-wrap:hover .ticker-track {
+      animation-play-state: paused;
+    }
+
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      color: #e8eef7;
+      font-weight: 600;
+      background: #0d1520;
+      border: 1px solid #203249;
+      border-radius: 999px;
+      padding: 8px 14px;
+    }
+
+    .ticker-symbol {
+      color: #ffffff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .ticker-symbol:hover {
+      text-decoration: underline;
+    }
+
+    .ticker-price {
+      color: #c9d6e5;
+    }
+
+    .ticker-change {
+      font-weight: 700;
+    }
+
+    .ticker-flames {
+      letter-spacing: 1px;
+      filter: drop-shadow(0 0 4px rgba(255, 120, 0, 0.35));
+    }
+
+    @keyframes tickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .capture-card,
+    .stat-card,
+    .card {
+      background: rgba(16, 25, 36, 0.92);
+      border: 1px solid #1e2e44;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+      backdrop-filter: blur(4px);
+    }
+
+    .capture-card {
+      margin-bottom: 22px;
+    }
+
+    .capture-title {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .capture-subtitle {
+      margin: 0 0 14px;
+      color: #93a4ba;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .capture-box,
+    .editor,
+    .input {
+      width: 100%;
+      background: #0d1520;
+      color: #e8eef7;
+      border: 1px solid #203249;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 15px;
+      line-height: 1.5;
+      outline: none;
+    }
+
+    .capture-box {
+      min-height: 150px;
+      margin-bottom: 14px;
+      resize: vertical;
+    }
+
+    .editor {
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    .editor.small {
+      min-height: 140px;
+    }
+
+    .input {
+      height: 48px;
+      padding: 10px 14px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: #132031;
+      color: #e8eef7;
+      border: 1px solid #23364e;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background: #18283b;
+    }
+
+    .btn.secondary {
+      background: #0f1722;
+    }
+
+    .btn.small {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    .mic-btn.listening {
+      background: #5a1d1d;
+      border-color: #8a2c2c;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .stat-label {
+      color: #90a0b6;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-size: 30px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      min-height: 220px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .card p, .card li {
+      color: #d8e2ee;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .wide {
+      grid-column: span 2;
+    }
+
+    .tall {
+      min-height: 320px;
+    }
+
+    .page-title {
+      margin-bottom: 18px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .page-subtitle {
+      color: #93a4ba;
+      margin: -6px 0 20px;
+    }
+
+    .save-note {
+      color: #8ea4bf;
+      font-size: 13px;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .stock-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr 0.8fr auto;
+      gap: 10px;
+      align-items: center;
+      background: #0d1520;
+      border: 1px solid #203249;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .stock-left {
+      min-width: 0;
+    }
+
+    .stock-symbol {
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .stock-symbol:hover {
+      text-decoration: underline;
+    }
+
+    .stock-meta {
+      color: #93a4ba;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .stock-price {
+      color: #d8e2ee;
+      font-size: 14px;
+    }
+
+    .stock-change {
+      text-align: right;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .positive {
+      color: #54d48a;
+    }
+
+    .negative {
+      color: #f27d7d;
+    }
+
+    .muted {
+      color: #93a4ba;
+    }
+
+    .small-label {
+      font-size: 12px;
+      color: #93a4ba;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+
+    .weather-main {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .weather-sub {
+      color: #d8e2ee;
+      line-height: 1.5;
+    }
+
+    .api-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .warning-note {
+      color: #e8c17a;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+
+    .watchlist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .watch-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: #0d1520;
+      border: 1px solid #203249;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .watch-pill a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .watch-pill a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 1200px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .wide { grid-column: span 2; }
+    }
+
+    @media (max-width: 800px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .stats { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .wide { grid-column: span 1; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .status-stack { align-items: flex-start; }
+      .api-row { grid-template-columns: 1fr; }
+      .stock-row { grid-template-columns: 1fr; }
+      .stock-change { text-align: left; }
+      .watch-pill { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-float">
+    <span class="bg1">crt</span>
+    <span class="bg2">crt</span>
+    <span class="bg3">crt</span>
+    <span class="bg4">crt</span>
+    <span class="bg5">crt</span>
+    <span class="bg6">crt</span>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">🚀 Mission<br>Control</div>
+
+      <div class="nav-section-title">Core</div>
+      <div class="nav-item active" data-view="dashboardView">Dashboard</div>
+      <div class="nav-item" data-view="tasksView">Tasks</div>
+      <div class="nav-item" data-view="calendarView">Calendar</div>
+      <div class="nav-item" data-view="projectsView">Projects</div>
+
+      <div class="nav-section-title">Knowledge</div>
+      <div class="nav-item" data-view="memoryView">Memory</div>
+      <div class="nav-item" data-view="docsView">Docs</div>
+      <div class="nav-item" data-view="ideasView">Ideas</div>
+
+      <div class="nav-section-title">Systems</div>
+      <div class="nav-item" data-view="aiView">AI Assistant</div>
+      <div class="nav-item" data-view="routinesView">Routines</div>
+      <div class="nav-item" data-view="reviewsView">Reviews</div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="headline">
+          <h1>Mission Control</h1>
+          <p>Your work and personal operating system.</p>
+        </div>
+
+        <div class="status-stack">
+          <div class="status-pill" id="liveDateTime">Loading date & time...</div>
+          <div class="status-pill" id="marketStatus">Market watch offline</div>
+        </div>
+      </div>
+
+      <div class="ticker-wrap">
+        <div class="ticker-track" id="tickerTrack">
+          <div class="ticker-item">Loading hot stocks...</div>
+        </div>
+      </div>
+
+      <section id="dashboardView" class="view active">
+        <div class="capture-card">
+          <h2 class="capture-title">Quick Capture</h2>
+          <p class="capture-subtitle">
+            Type or talk naturally. Examples: "Call supplier tomorrow at 10", "idea: new promo", "remember to review pricing", "project: finish menu draft this week"
+          </p>
+          <textarea id="quickCapture" class="capture-box" placeholder="Brain dump here..."></textarea>
+
+          <div class="button-row">
+            <button class="btn mic-btn" id="micBtn" onclick="toggleVoiceInput()">🎤 Start Talking</button>
+            <button class="btn" onclick="organizeCapture()">Organize My Day</button>
+            <button class="btn secondary" onclick="clearCapture()">Clear Capture Box</button>
+          </div>
+
+          <div class="save-note" id="voiceStatus">Voice ready</div>
+        </div>
+
+        <section class="stats">
+          <div class="stat-card">
+            <div class="stat-label">Today</div>
+            <div class="stat-value" id="todayDateShort">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Current Time</div>
+            <div class="stat-value" id="currentTimeShort">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Weather</div>
+            <div class="stat-value" id="weatherTempShort">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Location</div>
+            <div class="stat-value" id="weatherLocShort">--</div>
+          </div>
+        </section>
+
+        <section class="grid">
+          <div class="card">
+            <h2>📝 Tasks</h2>
+            <textarea id="dashboardTasks" class="editor small" data-save="dashboard_tasks"></textarea>
+            <div class="save-note">Auto-saves in browser</div>
+          </div>
+
+          <div class="card wide">
+            <h2>📅 Calendar</h2>
+            <textarea id="dashboardCalendar" class="editor small" data-save="dashboard_calendar"></textarea>
+            <div class="save-note">Auto-saves in browser</div>
+          </div>
+
+          <div class="card">
+            <h2>📁 Projects</h2>
+            <textarea id="dashboardProjects" class="editor small" data-save="dashboard_projects"></textarea>
+            <div class="save-note">Auto-saves in browser</div>
+          </div>
+
+          <div class="card">
+            <h2>🧠 Memory</h2>
+            <textarea id="dashboardMemory" class="editor small" data-save="dashboard_memory"></textarea>
+            <div class="save-note">Auto-saves in browser</div>
+          </div>
+
+          <div class="card">
+            <h2>💡 Ideas</h2>
+            <textarea id="dashboardIdeas" class="editor small" data-save="dashboard_ideas"></textarea>
+            <div class="save-note">Auto-saves in browser</div>
+          </div>
+
+          <div class="card">
+            <h2>☁️ Weather</h2>
+            <div class="weather-main" id="weatherMain">Loading weather...</div>
+            <div class="weather-sub" id="weatherDetails">Waiting for location permission.</div>
+            <div class="warning-note">Uses your device location to show local weather.</div>
+          </div>
+
+          <div class="card wide">
+            <h2>📈 Live Market Watch</h2>
+            <div class="small-label">Alpha Vantage API Key</div>
+            <div class="api-row">
+              <input id="alphaKey" class="input" type="text" placeholder="Paste Alpha Vantage API key here" />
+              <button class="btn" onclick="saveApiKey()">Save Key</button>
+              <button class="btn secondary" onclick="loadStocks()">Refresh Stocks</button>
+            </div>
+            <div class="save-note">Your key is only saved in this browser.</div>
+            <div class="warning-note">This is a momentum watchlist, not a guaranteed profit list.</div>
+          </div>
+
+          <div class="card">
+            <h2>🔥 Penny Watchlist</h2>
+            <div id="pennyStocks">
+              <div class="muted">Add your API key and refresh.</div>
+            </div>
+          </div>
+
+          <div class="card wide">
+            <h2>🚀 Regular Stock Watchlist</h2>
+            <div id="regularStocks">
+              <div class="muted">Add your API key and refresh.</div>
+            </div>
+          </div>
+
+          <div class="card wide">
+            <h2>📌 Today’s Watchlist</h2>
+            <div id="pinnedStocks" class="watchlist-items">
+              <div class="muted">Pin names from the stock cards below.</div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="tasksView" class="view">
+        <div class="page-title">Tasks</div>
+        <div class="page-subtitle">Track priorities, follow-ups, and action items.</div>
+        <div class="card">
+          <h2>Task List</h2>
+          <textarea id="tasksMain" class="editor" data-save="tasks_main"></textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+
+      <section id="calendarView" class="view">
+        <div class="page-title">Calendar</div>
+        <div class="page-subtitle">Your schedule, appointments, and time blocks.</div>
+        <div class="card">
+          <h2>Calendar Items</h2>
+          <textarea id="calendarMain" class="editor" data-save="calendar_main"></textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+
+      <section id="projectsView" class="view">
+        <div class="page-title">Projects</div>
+        <div class="page-subtitle">Everything currently in motion.</div>
+        <div class="card">
+          <h2>Projects</h2>
+          <textarea id="projectsMain" class="editor" data-save="projects_main"></textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+
+      <section id="memoryView" class="view">
+        <div class="page-title">Memory</div>
+        <div class="page-subtitle">Context, reminders, lessons, and notes worth keeping.</div>
+        <div class="card">
+          <h2>Memory</h2>
+          <textarea id="memoryMain" class="editor" data-save="memory_main"></textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+
+      <section id="docsView" class="view">
+        <div class="page-title">Docs</div>
+        <div class="page-subtitle">Plans, SOPs, writeups, and working documents.</div>
+        <div class="card">
+          <h2>Docs</h2>
+          <textarea id="docsMain" class="editor" data-save="docs_main"></textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+
+      <section id="ideasView" class="view">
+        <div class="page-title">Ideas</div>
+        <div class="page-subtitle">Capture thoughts before they disappear.</div>
+        <div class="card">
+          <h2>Ideas</h2>
+          <textarea id="ideasMain" class="editor" data-save="ideas_main"></textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+
+      <section id="aiView" class="view">
+        <div class="page-title">AI Assistant</div>
+        <div class="page-subtitle">Later this will connect to OpenClaw and Ollama.</div>
+        <div class="card">
+          <h2>Prompt Ideas</h2>
+          <textarea class="editor" data-save="ai_prompts">What should I focus on today?
+Summarize my priorities.
+Help me plan tomorrow.
+Which watchlist names should I research first?</textarea>
+          <div class="save-note">You can edit these</div>
+        </div>
+      </section>
+
+      <section id="routinesView" class="view">
+        <div class="page-title">Routines</div>
+        <div class="page-subtitle">Morning, workday, and wrap-up operating flows.</div>
+        <div class="card">
+          <h2>Daily Routine</h2>
+          <textarea class="editor" data-save="routines_main">Morning review
+Priority planning
+Work blocks
+End-of-day reflection</textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+
+      <section id="reviewsView" class="view">
+        <div class="page-title">Reviews</div>
+        <div class="page-subtitle">Weekly and monthly reflection.</div>
+        <div class="card">
+          <h2>Review Notes</h2>
+          <textarea class="editor" data-save="reviews_main">Weekly review:
+- What worked
+- What didn't
+
+Monthly reflection:
+- Wins
+- Changes needed</textarea>
+          <div class="save-note">Auto-saves in browser</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const navItems = document.querySelectorAll('.nav-item');
+    const views = document.querySelectorAll('.view');
+
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        navItems.forEach(nav => nav.classList.remove('active'));
+        item.classList.add('active');
+
+        const targetView = item.getAttribute('data-view');
+        views.forEach(view => view.classList.remove('active'));
+        document.getElementById(targetView).classList.add('active');
+      });
+    });
+
+    const defaultValues = {
+      dashboard_tasks: "Top 3 priorities\n- \n- \n-\n",
+      dashboard_calendar: "9:00 AM — Morning planning\n12:30 PM — Lunch / reset\n4:00 PM — Project review",
+      dashboard_projects: "Business projects\n- \n\nPersonal projects\n- ",
+      dashboard_memory: "Important reminders, lessons, and context.",
+      dashboard_ideas: "New ideas and opportunities.",
+      tasks_main: "1.\n2.\n3.",
+      calendar_main: "9:00 AM — Morning planning\n11:00 AM — Deep work\n1:00 PM — Lunch\n4:00 PM — Review and wrap-up",
+      projects_main: "- ",
+      memory_main: "Important things to remember:\n- ",
+      docs_main: "Plans\nSOPs\nReference notes",
+      ideas_main: "- "
+    };
+
+    const editors = document.querySelectorAll('[data-save]');
+
+    editors.forEach(editor => {
+      const key = editor.getAttribute('data-save');
+      const saved = localStorage.getItem(key);
+
+      if (saved !== null) {
+        editor.value = saved;
+      } else if (defaultValues[key]) {
+        editor.value = defaultValues[key];
+      }
+
+      editor.addEventListener('input', () => {
+        localStorage.setItem(key, editor.value);
+      });
+    });
+
+    const captureBox = document.getElementById('quickCapture');
+    const savedCapture = localStorage.getItem('quick_capture');
+    if (savedCapture !== null) {
+      captureBox.value = savedCapture;
+    }
+
+    captureBox.addEventListener('input', () => {
+      localStorage.setItem('quick_capture', captureBox.value);
+    });
+
+    function appendLine(existing, line) {
+      const cleanExisting = existing.trim();
+      return cleanExisting ? cleanExisting + "\n" + line : line;
+    }
+
+    function organizeCapture() {
+      const raw = captureBox.value.trim();
+      if (!raw) return;
+
+      const lines = raw
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+      const taskBox = document.getElementById('dashboardTasks');
+      const calendarBox = document.getElementById('dashboardCalendar');
+      const projectBox = document.getElementById('dashboardProjects');
+      const memoryBox = document.getElementById('dashboardMemory');
+      const ideasBox = document.getElementById('dashboardIdeas');
+
+      const tasksMain = document.getElementById('tasksMain');
+      const calendarMain = document.getElementById('calendarMain');
+      const projectsMain = document.getElementById('projectsMain');
+      const memoryMain = document.getElementById('memoryMain');
+      const ideasMain = document.getElementById('ideasMain');
+
+      lines.forEach(line => {
+        const lower = line.toLowerCase();
+
+        const isCalendar =
+          lower.includes('tomorrow') ||
+          lower.includes('today') ||
+          lower.includes('monday') ||
+          lower.includes('tuesday') ||
+          lower.includes('wednesday') ||
+          lower.includes('thursday') ||
+          lower.includes('friday') ||
+          lower.includes('saturday') ||
+          lower.includes('sunday') ||
+          /\b\d{1,2}(:\d{2})?\s?(am|pm)\b/i.test(line) ||
+          lower.includes(' at ');
+
+        const isIdea =
+          lower.startsWith('idea:') ||
+          lower.startsWith('new idea:') ||
+          lower.includes('idea');
+
+        const isMemory =
+          lower.startsWith('remember') ||
+          lower.startsWith('reminder:') ||
+          lower.includes('remember to');
+
+        const isProject =
+          lower.startsWith('project:') ||
+          lower.includes('this week') ||
+          lower.includes('finish') ||
+          lower.includes('build') ||
+          lower.includes('complete');
+
+        if (isIdea) {
+          ideasBox.value = appendLine(ideasBox.value, line);
+          ideasMain.value = appendLine(ideasMain.value, line);
+        } else if (isCalendar) {
+          calendarBox.value = appendLine(calendarBox.value, line);
+          calendarMain.value = appendLine(calendarMain.value, line);
+        } else if (isMemory) {
+          memoryBox.value = appendLine(memoryBox.value, line);
+          memoryMain.value = appendLine(memoryMain.value, line);
+        } else if (isProject) {
+          projectBox.value = appendLine(projectBox.value, line);
+          projectsMain.value = appendLine(projectsMain.value, line);
+        } else {
+          taskBox.value = appendLine(taskBox.value, line);
+          tasksMain.value = appendLine(tasksMain.value, line);
+        }
+      });
+
+      localStorage.setItem('dashboard_tasks', taskBox.value);
+      localStorage.setItem('dashboard_calendar', calendarBox.value);
+      localStorage.setItem('dashboard_projects', projectBox.value);
+      localStorage.setItem('dashboard_memory', memoryBox.value);
+      localStorage.setItem('dashboard_ideas', ideasBox.value);
+
+      localStorage.setItem('tasks_main', tasksMain.value);
+      localStorage.setItem('calendar_main', calendarMain.value);
+      localStorage.setItem('projects_main', projectsMain.value);
+      localStorage.setItem('memory_main', memoryMain.value);
+      localStorage.setItem('ideas_main', ideasMain.value);
+
+      captureBox.value = '';
+      localStorage.setItem('quick_capture', '');
+    }
+
+    function clearCapture() {
+      captureBox.value = '';
+      localStorage.setItem('quick_capture', '');
+    }
+
+    let recognition;
+    let isListening = false;
+
+    function toggleVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const micBtn = document.getElementById('micBtn');
+      const voiceStatus = document.getElementById('voiceStatus');
+
+      if (!SpeechRecognition) {
+        voiceStatus.textContent = 'Voice input is not supported in this browser.';
+        return;
+      }
+
+      if (!recognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+          isListening = true;
+          micBtn.textContent = '🛑 Stop Talking';
+          micBtn.classList.add('listening');
+          voiceStatus.textContent = 'Listening... speak naturally';
+        };
+
+        recognition.onend = () => {
+          isListening = false;
+          micBtn.textContent = '🎤 Start Talking';
+          micBtn.classList.remove('listening');
+          voiceStatus.textContent = 'Voice ready';
+        };
+
+        recognition.onerror = (event) => {
+          voiceStatus.textContent = 'Voice error: ' + event.error;
+        };
+
+        recognition.onresult = (event) => {
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + '\n';
+            }
+          }
+
+          if (finalTranscript) {
+            const current = captureBox.value.trim();
+            captureBox.value = current
+              ? current + '\n' + finalTranscript.trim()
+              : finalTranscript.trim();
+
+            localStorage.setItem('quick_capture', captureBox.value);
+
+            setTimeout(() => {
+              organizeCapture();
+            }, 500);
+          }
+        };
+      }
+
+      if (isListening) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    }
+
+    function updateDateTime() {
+      const now = new Date();
+
+      const full = now.toLocaleString([], {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      document.getElementById('liveDateTime').textContent = full;
+      document.getElementById('todayDateShort').textContent = now.toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric'
+      });
+      document.getElementById('currentTimeShort').textContent = now.toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    function weatherCodeToText(code) {
+      const map = {
+        0: 'Clear',
+        1: 'Mostly clear',
+        2: 'Partly cloudy',
+        3: 'Overcast',
+        45: 'Fog',
+        48: 'Rime fog',
+        51: 'Light drizzle',
+        53: 'Drizzle',
+        55: 'Heavy drizzle',
+        61: 'Light rain',
+        63: 'Rain',
+        65: 'Heavy rain',
+        71: 'Light snow',
+        73: 'Snow',
+        75: 'Heavy snow',
+        80: 'Rain showers',
+        81: 'Heavy showers',
+        82: 'Violent showers',
+        95: 'Thunderstorm',
+        96: 'Storm + hail',
+        99: 'Severe storm + hail'
+      };
+      return map[code] || 'Weather update';
+    }
+
+    async function loadWeather() {
+      const weatherMain = document.getElementById('weatherMain');
+      const weatherDetails = document.getElementById('weatherDetails');
+
+      if (!navigator.geolocation) {
+        weatherMain.textContent = 'Location unavailable';
+        weatherDetails.textContent = 'Your browser does not support geolocation.';
+        return;
+      }
+
+      weatherMain.textContent = 'Finding location...';
+      weatherDetails.textContent = 'Please allow location access for local weather.';
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        try {
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph`;
+          const response = await fetch(url);
+          const data = await response.json();
+
+          const current = data.current || {};
+          const temp = current.temperature_2m;
+          const feels = current.apparent_temperature;
+          const wind = current.wind_speed_10m;
+          const code = current.weather_code;
+
+          weatherMain.textContent = `${temp ?? '--'}°F • ${weatherCodeToText(code)}`;
+          weatherDetails.textContent = `Feels like ${feels ?? '--'}°F • Wind ${wind ?? '--'} mph`;
+
+          document.getElementById('weatherTempShort').textContent = temp ? `${temp}°F` : '--';
+          document.getElementById('weatherLocShort').textContent = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+        } catch (error) {
+          weatherMain.textContent = 'Weather unavailable';
+          weatherDetails.textContent = 'Could not load weather right now.';
+        }
+      }, () => {
+        weatherMain.textContent = 'Location denied';
+        weatherDetails.textContent = 'Allow location access to load your local weather.';
+      });
+    }
+
+    loadWeather();
+
+    const alphaKeyInput = document.getElementById('alphaKey');
+    const savedAlphaKey = localStorage.getItem('alpha_vantage_key');
+    if (savedAlphaKey) {
+      alphaKeyInput.value = savedAlphaKey;
+    }
+
+    function saveApiKey() {
+      const key = alphaKeyInput.value.trim();
+      localStorage.setItem('alpha_vantage_key', key);
+      document.getElementById('marketStatus').textContent = key ? 'API key saved' : 'API key cleared';
+    }
+
+    function parsePercent(value) {
+      if (!value) return 0;
+      return parseFloat(String(value).replace('%', '').replace('+', '').trim()) || 0;
+    }
+
+    function parsePrice(value) {
+      if (!value) return 0;
+      return parseFloat(String(value).replace('$', '').replace(',', '').trim()) || 0;
+    }
+
+    function stockUrl(ticker) {
+      return `https://finance.yahoo.com/quote/${encodeURIComponent(ticker)}`;
+    }
+
+    function getPinnedStocks() {
+      const saved = localStorage.getItem('pinned_stocks');
+      try {
+        return saved ? JSON.parse(saved) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function setPinnedStocks(items) {
+      localStorage.setItem('pinned_stocks', JSON.stringify(items));
+    }
+
+    function pinStock(item) {
+      const pinned = getPinnedStocks();
+      const exists = pinned.some(x => x.ticker === item.ticker);
+      if (!exists) {
+        pinned.unshift(item);
+      }
+      setPinnedStocks(pinned.slice(0, 12));
+      renderPinnedStocks();
+    }
+
+    function removePinnedStock(ticker) {
+      const pinned = getPinnedStocks().filter(x => x.ticker !== ticker);
+      setPinnedStocks(pinned);
+      renderPinnedStocks();
+    }
+
+    function renderPinnedStocks() {
+      const container = document.getElementById('pinnedStocks');
+      const pinned = getPinnedStocks();
+
+      if (!pinned.length) {
+        container.innerHTML = '<div class="muted">Pin names from the stock cards below.</div>';
+        return;
+      }
+
+      container.innerHTML = pinned.map(item => {
+        const pct = parsePercent(item.change_percentage);
+        const cls = pct >= 0 ? 'positive' : 'negative';
+        return `
+          <div class="watch-pill">
+            <div>
+              <a href="${stockUrl(item.ticker)}" target="_blank" rel="noopener noreferrer">${item.ticker}</a>
+              <span class="muted"> • $${item.price || '--'} • </span>
+              <span class="${cls}">${item.change_percentage || '--'}</span>
+            </div>
+            <button class="btn small secondary" onclick="removePinnedStock('${item.ticker}')">Remove</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStockList(containerId, items, emptyText) {
+      const container = document.getElementById(containerId);
+
+      if (!items || !items.length) {
+        container.innerHTML = `<div class="muted">${emptyText}</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const pct = parsePercent(item.change_percentage);
+        const changeClass = pct >= 0 ? 'positive' : 'negative';
+
+        return `
+          <div class="stock-row">
+            <div class="stock-left">
+              <a class="stock-symbol" href="${stockUrl(item.ticker)}" target="_blank" rel="noopener noreferrer">${item.ticker || 'N/A'}</a>
+              <div class="stock-meta">${item.volume ? 'Vol ' + Number(item.volume).toLocaleString() : 'Watching'}</div>
+            </div>
+            <div class="stock-price">$${item.price || '--'}</div>
+            <div class="stock-change ${changeClass}">${item.change_percentage || '--'}</div>
+            <div>
+              <button class="btn small" onclick='pinStock(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Pin</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTickerBanner(items) {
+      const tickerTrack = document.getElementById('tickerTrack');
+
+      if (!items || !items.length) {
+        tickerTrack.innerHTML = '<div class="ticker-item">No hot stocks loaded yet.</div>';
+        return;
+      }
+
+      const topItems = items.slice(0, 10);
+
+      const html = topItems.map((item, index) => {
+        const pct = parsePercent(item.change_percentage);
+        const changeClass = pct >= 0 ? 'positive' : 'negative';
+
+        let flames = '🔥';
+        if (index < 3) flames = '🔥🔥🔥';
+        else if (index < 7) flames = '🔥🔥';
+
+        return `
+          <div class="ticker-item">
+            <span class="ticker-flames">${flames}</span>
+            <a class="ticker-symbol" href="${stockUrl(item.ticker)}" target="_blank" rel="noopener noreferrer">${item.ticker || 'N/A'}</a>
+            <span class="ticker-price">$${item.price || '--'}</span>
+            <span class="ticker-change ${changeClass}">${item.change_percentage || '--'}</span>
+          </div>
+        `;
+      }).join('');
+
+      tickerTrack.innerHTML = html + html;
+    }
+
+    async function loadStocks() {
+      const key = alphaKeyInput.value.trim();
+      localStorage.setItem('alpha_vantage_key', key);
+
+      const pennyContainer = document.getElementById('pennyStocks');
+      const regularContainer = document.getElementById('regularStocks');
+      const marketStatus = document.getElementById('marketStatus');
+
+      if (!key) {
+        marketStatus.textContent = 'Add Alpha Vantage API key';
+        pennyContainer.innerHTML = '<div class="muted">Add your API key first.</div>';
+        regularContainer.innerHTML = '<div class="muted">Add your API key first.</div>';
+        renderTickerBanner([]);
+        return;
+      }
+
+      marketStatus.textContent = 'Loading movers...';
+      pennyContainer.innerHTML = '<div class="muted">Loading penny movers...</div>';
+      regularContainer.innerHTML = '<div class="muted">Loading regular movers...</div>';
+
+      try {
+        const url = `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${encodeURIComponent(key)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const gainers = Array.isArray(data.top_gainers) ? data.top_gainers : [];
+        const actives = Array.isArray(data.most_actively_traded) ? data.most_actively_traded : [];
+
+        const merged = [...gainers, ...actives];
+        const dedupedMap = new Map();
+
+        merged.forEach(item => {
+          if (item && item.ticker) {
+            dedupedMap.set(item.ticker, item);
+          }
+        });
+
+        const deduped = Array.from(dedupedMap.values());
+
+        const penny = deduped
+          .filter(item => parsePrice(item.price) > 0 && parsePrice(item.price) < 5)
+          .sort((a, b) => parsePercent(b.change_percentage) - parsePercent(a.change_percentage))
+          .slice(0, 6);
+
+        const regular = deduped
+          .filter(item => parsePrice(item.price) >= 5)
+          .sort((a, b) => parsePercent(b.change_percentage) - parsePercent(a.change_percentage))
+          .slice(0, 8);
+
+        const combinedHotList = [...penny, ...regular]
+          .sort((a, b) => parsePercent(b.change_percentage) - parsePercent(a.change_percentage))
+          .slice(0, 10);
+
+        renderStockList('pennyStocks', penny, 'No penny movers found in the current feed.');
+        renderStockList('regularStocks', regular, 'No regular movers found in the current feed.');
+        renderTickerBanner(combinedHotList);
+
+        const updatedAt = data.last_updated || data.information || 'Market movers loaded';
+        marketStatus.textContent = typeof updatedAt === 'string' ? updatedAt : 'Market movers loaded';
+      } catch (error) {
+        marketStatus.textContent = 'Stock feed unavailable';
+        pennyContainer.innerHTML = '<div class="muted">Could not load penny movers.</div>';
+        regularContainer.innerHTML = '<div class="muted">Could not load regular movers.</div>';
+        renderTickerBanner([]);
+      }
+    }
+
+    renderPinnedStocks();
+
+    if (savedAlphaKey) {
+      loadStocks();
+      setInterval(loadStocks, 300000);
+    } else {
+      renderTickerBanner([]);
+    }
+  </script>
+</body>
+</html>
